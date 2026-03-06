@@ -88,6 +88,9 @@ class SceneManager:
     # ------------------------------
     # Dialogue Selection
     # ------------------------------
+    # ------------------------------
+    # Dialogue Selection
+    # ------------------------------
 
     def choose_next_speaker(self, history):
 
@@ -96,18 +99,24 @@ class SceneManager:
         if not present:
             return None
 
-        # reply behavior
+        # if conversation exists
         if history:
 
             last_speaker = history[-1]["speaker"]
 
-            # characters often reply to who spoke
-            possible = [
-                cid for cid in present
-                if self.characters[cid]["identity"]["name"] != last_speaker
-            ]
+            # avoid same person speaking twice
+            possible = []
 
-            if possible and random.random() < 0.7:
+            for cid in present:
+
+                char_name = self.characters[cid]["identity"]["name"]
+
+                if char_name != last_speaker:
+                    possible.append(cid)
+
+            # 80% chance someone replies to last speaker
+            if possible and random.random() < 0.8:
                 return random.choice(possible)
 
+        # fallback random
         return random.choice(present)
