@@ -61,10 +61,27 @@ while True:
     user_input = input("You (Rushia Vessel, enter to skip): ")
 
     if user_input.strip() != "":
+            conversation_history.append({
+        "speaker": "Rushia Vessel",
+        "line": user_input
+    })
+        # Force characters to react to the user first
+    for char_id, char in characters.items():
+
+        line = dialogue.generate_line(
+            char,
+            conversation_history,
+            scene.active_scene
+        )
+
+        print(f'{char["identity"]["name"]}: {line}')
+
         conversation_history.append({
-            "speaker": "Rushia Vessel",
-            "line": user_input
+            "speaker": char["identity"]["name"],
+            "line": line
         })
+
+    continue
 
     # -------------------------
     # Event Check

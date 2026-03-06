@@ -5,7 +5,7 @@ class DialogueEngine:
 
     def __init__(self):
         self.url = "http://localhost:11434/api/generate"
-        self.model = "llama3"
+        self.model = "qwen2.5:7b"
 
     def generate_line(self, character, history, scene):
 

@@ -124,12 +124,12 @@
 
   "relationships": {
     "main_household": [
-      "selene",
-      "shirou_prisma",
-      "illya_prisma",
-      "chloe_prisma",
-      "miyu_edelfelt",
-      "illya_alt"
+        "selene",
+     "shirou",
+  "illya",
+      "chloe",
+      "miyu",
+     "illya_alt"
     ],
 
     "relationship_status": "developing naturally through interactions"
