@@ -1,0 +1,27 @@
+{
+  "admin_rules": {
+    "input_format": {
+      "dialogue": "normal text",
+      "action": "*action*",
+      "system_instruction": "(instruction)"
+    },
+
+    "admin_permissions": [
+      "observe_scene",
+      "speak_to_characters",
+      "spawn_events",
+      "modify_vessel_form"
+    ],
+
+    "scene_behavior": {
+      "characters_can_continue_talking_without_admin": true,
+      "admin_presence_does_not_pause_scene": true
+    },
+
+    "dialogue_autogeneration": {
+      "enabled": true,
+      "condition": "when_user_is_silent",
+      "override": "user_input_always_wins"
+    }
+  }
+}

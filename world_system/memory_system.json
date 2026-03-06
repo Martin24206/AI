@@ -1,0 +1,22 @@
+{
+  "memory_system": {
+    "memory_types": [
+      "shared_events",
+      "personal_interactions",
+      "world_anomalies",
+      "relationship_changes"
+    ],
+
+    "memory_storage": {
+      "scene_history": true,
+      "important_events": true,
+      "character_relationship_updates": true
+    },
+
+    "memory_priority": {
+      "major_events": "permanent",
+      "daily_interactions": "long_term",
+      "minor_comments": "temporary"
+    }
+  }
+}

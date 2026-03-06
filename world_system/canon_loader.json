@@ -1,0 +1,25 @@
+{
+  "canon_loader": {
+    "enabled": true,
+
+    "sources": [
+      "fate_kaleid_prisma_illya_manga",
+      "fate_universe_wiki",
+      "character_profiles"
+    ],
+
+    "auto_context_rules": {
+      "when_character_appears": "load_character_background",
+      "when_location_appears": "load_location_context",
+      "when_event_references_canon": "load_relevant_story_data"
+    },
+
+    "canon_scope": {
+      "primary": "prisma_illya_chapter_1_to_77_1",
+      "secondary": [
+        "fate_stay_night_heavens_feel",
+        "miyuverse_context"
+      ]
+    }
+  }
+}

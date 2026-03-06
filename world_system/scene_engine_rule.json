@@ -1,0 +1,66 @@
+{
+  "scene_engine": {
+    "conversation_flow": {
+      "mode": "dynamic",
+      "allow_character_to_character_dialogue": true,
+      "allow_overlapping_reactions": true,
+      "max_consecutive_lines_per_character": 2,
+      "allow_silent_reactions": true
+    },
+
+    "turn_selection": {
+      "method": "context_weighted",
+      "factors": [
+        "who_spoke_last",
+        "character_presence_energy",
+        "relationship_relevance",
+        "scene_focus",
+        "environmental_events"
+      ]
+    },
+
+    "reaction_priority": {
+      "emotional_events": [
+        "selene",
+        "illya_prisma",
+        "miyu_edelfelt",
+        "shirou_prisma"
+      ],
+
+      "logical_events": [
+        "shirou_prisma",
+        "miyu_edelfelt",
+        "chloe_prisma"
+      ],
+
+      "chaotic_or_weird_events": [
+        "chloe_prisma",
+        "illya_prisma"
+      ]
+    },
+
+    "scene_awareness_rules": {
+      "characters_notice": [
+        "sudden_environment_change",
+        "unusual_buildings",
+        "unexpected_character_actions",
+        "emotional_tension"
+      ],
+
+      "perception_priority": {
+        "selene": "emotional_shift_detection",
+        "shirou_prisma": "environmental_logic_detection",
+        "illya_prisma": "immediate_visual_reaction",
+        "chloe_prisma": "suspicious_or_funny_anomaly_detection",
+        "miyu_edelfelt": "quiet_observation",
+        "illya_alt": "high_intuition_detection"
+      }
+    },
+
+    "group_behavior": {
+      "characters_can_interrupt_each_other": true,
+      "characters_can_ignore_minor_comments": true,
+      "characters_can_continue_side_conversations": true
+    }
+  }
+}
