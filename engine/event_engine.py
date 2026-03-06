@@ -3,22 +3,26 @@ import random
 
 class EventEngine:
 
-    def __init__(self, event_rules):
-        self.rules = event_rules
+    def __init__(self, rules):
+        self.rules = rules
 
     def check_for_event(self):
 
-        probability = self.rules["dynamic_events"]["probability_rules"]
+        chance = self.rules["global_event_chance"]
 
-        roll = random.random()
+        if random.random() > chance:
+            return None
 
-        if roll < probability["major_events"]:
-            return "major_event"
+        categories = self.rules["event_categories"]
 
-        elif roll < probability["moderate_events"]:
-            return "moderate_event"
+        category = random.choice(list(categories.keys()))
 
-        elif roll < probability["low_intensity_events"]:
-            return "minor_event"
+        event_type = random.choice(
+            categories[category]["possible_events"]
+        )
 
-        return None
+        return {
+            "category": category,
+            "type": event_type,
+            "description": f"A {event_type.replace('_',' ')} occurs."
+        }

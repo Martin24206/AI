@@ -1,0 +1,50 @@
+{
+  "global_event_chance": 0.25,
+
+  "event_categories": {
+
+    "environmental": {
+      "base_probability": 0.9,
+      "possible_events": [
+        "wind_change",
+        "passing_vehicle",
+        "sudden_noise"
+      ]
+    },
+
+    "social": {
+      "base_probability": 0.3,
+      "possible_events": [
+        "awkward_silence",
+        "someone_interrupts",
+        "unexpected_comment"
+      ]
+    },
+
+    "anomaly": {
+      "base_probability": 0.05,
+      "possible_events": [
+        "reality_glitch",
+        "temporal_overlap",
+        "impossible_object"
+      ]
+    }
+
+  },
+
+  "generation_modifiers": {
+
+    "crowded_scene": {
+      "social": 1.8
+    },
+
+    "quiet_location": {
+      "environmental": 1.4
+    },
+
+    "magic_users_present": {
+      "anomaly": 2.0
+    }
+
+  }
+}

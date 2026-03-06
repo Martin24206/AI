@@ -15,6 +15,7 @@ class SceneManager:
             "recent_events": []
         }
 
+
     # ------------------------------
     # Scene Setup
     # ------------------------------
@@ -24,6 +25,7 @@ class SceneManager:
         self.active_scene["location"] = location
         self.active_scene["characters_present"] = characters_present
         self.active_scene["recent_events"] = []
+
 
     # ------------------------------
     # Event Handling
@@ -42,6 +44,7 @@ class SceneManager:
             "observers": observers,
             "reactors": reactors
         }
+
 
     # ------------------------------
     # Attention Detection
@@ -66,6 +69,7 @@ class SceneManager:
 
         return observers
 
+
     # ------------------------------
     # Reaction Selection
     # ------------------------------
@@ -80,15 +84,30 @@ class SceneManager:
             min(2, len(self.active_scene["characters_present"]))
         )
 
+
     # ------------------------------
     # Dialogue Selection
     # ------------------------------
 
-    def choose_next_speaker(self):
+    def choose_next_speaker(self, history):
 
         present = self.active_scene["characters_present"]
 
         if not present:
             return None
+
+        # reply behavior
+        if history:
+
+            last_speaker = history[-1]["speaker"]
+
+            # characters often reply to who spoke
+            possible = [
+                cid for cid in present
+                if self.characters[cid]["identity"]["name"] != last_speaker
+            ]
+
+            if possible and random.random() < 0.7:
+                return random.choice(possible)
 
         return random.choice(present)
