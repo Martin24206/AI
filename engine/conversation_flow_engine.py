@@ -4,42 +4,64 @@ import random
 class ConversationFlowEngine:
 
     def __init__(self, characters):
+
         self.characters = characters
+        self.last_speaker = None
 
 
-    def choose_next_speaker(self, conversation_history, scene):
-        """
-        Decide which character should speak next.
-        Returns a character ID.
-        """
+    def get_talk_weight(self, character):
 
-        present_characters = scene.get("characters_present", [])
+        personality = character.get("personality", {})
+        traits = personality.get("traits", [])
 
-        if not present_characters:
-            return None
+        weight = 1.0
 
-        # If no history yet, choose randomly
-        if not conversation_history:
-            return random.choice(present_characters)
+        if "quiet" in traits:
+            weight -= 0.4
 
-        last_speaker = conversation_history[-1]["speaker"]
+        if "observant" in traits:
+            weight -= 0.2
 
-        # Remove the last speaker so they don't immediately speak again
-        possible_speakers = []
+        if "playful" in traits:
+            weight += 0.4
 
-        for char_id in present_characters:
+        return max(weight, 0.1)
 
-            char = self.characters[char_id]
 
-            if char["identity"]["name"] == last_speaker:
+    def choose_next_speaker(self, history, scene):
+
+        present = scene["characters_present"]
+
+        candidates = []
+
+        for cid in present:
+
+            char = self.characters[cid]
+            name = char["identity"]["name"]
+
+            if name == self.last_speaker:
                 continue
 
-            if char["identity"]["id"] == "admin_external_operator":
-                continue
+            weight = self.get_talk_weight(char)
 
-            possible_speakers.append(char_id)
+            candidates.append((cid, weight))
 
-        if not possible_speakers:
+        if not candidates:
             return None
 
-        return random.choice(possible_speakers)
+        total = sum(w for _, w in candidates)
+
+        r = random.uniform(0, total)
+
+        upto = 0
+
+        for cid, weight in candidates:
+
+            if upto + weight >= r:
+                self.last_speaker = self.characters[cid]["identity"]["name"]
+                return cid
+
+            upto += weight
+
+        if not candidates:
+             return random.choice(scene["characters_present"])

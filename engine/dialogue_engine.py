@@ -1,11 +1,14 @@
+
 import requests
 
 
 class DialogueEngine:
 
     def __init__(self):
-        self.url = "http://localhost:11434/api/generate"
-        self.model = "qwen2.5:7b"
+
+        self.endpoint = "http://localhost:11434/api/generate"
+        self.model = "llama3"
+
 
     def generate_line(
         self,
@@ -13,147 +16,73 @@ class DialogueEngine:
         history,
         scene,
         recent_memories=None,
-        event_memories=None
+        event_memories=None,
+        mood=None,
+        action=None,
+        relationship=None,
+        world_knowledge=None
     ):
 
         name = character["identity"]["name"]
-        personality = character.get("personality", "neutral")
-        location = scene.get("location", "unknown")
+        personality = character["personality"]["description"]
 
-        # -------------------------
-        # Conversation History
-        # -------------------------
+        location = scene["location"]
 
         history_text = ""
-        last_speaker = None
 
-        for entry in history[-10:]:
+        for h in history[-8:]:
+            history_text += f'{h["speaker"]}: {h["line"]}\n'
 
-            speaker = entry["speaker"]
-            line = entry["line"]
 
-            history_text += f"{speaker}: {line}\n"
-            last_speaker = speaker
+        mood_text = f"Current mood: {mood}" if mood else ""
+        action_text = f"Body language: {action}" if action else ""
+        relationship_text = f"Tone toward others: {relationship}" if relationship else ""
 
-        # -------------------------
-        # Memory Context
-        # -------------------------
+        knowledge_text = ""
 
-        memory_context = ""
+        if world_knowledge:
 
-        if recent_memories:
+            knowledge_text = "Known world facts:\n"
 
-            memory_context += "\nRelevant past conversations:\n"
+            for fact in world_knowledge[-5:]:
+                knowledge_text += f"- {fact}\n"
 
-            for mem in recent_memories[-5:]:
-
-                speaker = mem.get("speaker", "")
-                line = mem.get("line", "")
-
-                memory_context += f"{speaker} said: {line}\n"
-
-        if event_memories:
-
-            memory_context += "\nImportant past events:\n"
-
-            for event in event_memories[-3:]:
-
-                content = event.get("content", "")
-
-                memory_context += f"- {content}\n"
-
-        # -------------------------
-        # Admin Awareness
-        # -------------------------
-
-        admin_context = ""
-
-        if last_speaker == "Rushia Vessel":
-
-            admin_context = """
-Rushia Vessel is an external observer/admin interacting with the world.
-You may respond to them naturally.
-"""
-
-        # -------------------------
-        # Prompt
-        # -------------------------
 
         prompt = f"""
-You are {name} in a living character world simulation.
+You are {name} inside a living character simulation.
 
 Location: {location}
+
+{mood_text}
+{action_text}
+{relationship_text}
 
 Personality:
 {personality}
 
-{admin_context}
+{knowledge_text}
 
-{memory_context}
-
-The last speaker was: {last_speaker}
-
-Conversation so far:
+Conversation:
 {history_text}
 
-If greetings already happened earlier, do not greet again.
-
 Speak naturally as {name}.
-Respond to the last speaker if appropriate.
+Write ONE line of dialogue.
 
-Write ONE short sentence of dialogue.
-
-{name} says:
+{name}:
 """
 
-        try:
 
-            response = requests.post(
-                self.url,
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False
-                }
-            )
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False
+        }
 
-            data = response.json()
+        response = requests.post(self.endpoint, json=payload)
 
-            line = data.get("response", "").strip()
+        text = response.json()["response"]
 
-            line = line.split("\n")[0]
+        text = text.replace(f"{name}:", "")
+        text = text.replace(f"{name} says:", "")
 
-            # -------------------------
-            # Remove narration artifacts
-            # -------------------------
-
-            bad_phrases = [
-                "says,",
-                "said,",
-                "remarked,",
-                "replied,",
-                "nodding",
-                "smiling",
-                "looking"
-            ]
-
-            for phrase in bad_phrases:
-
-                if phrase in line.lower():
-
-                    parts = line.split('"')
-
-                    if len(parts) >= 2:
-                        line = parts[1]
-
-            line = line.strip()
-
-            # limit length
-            if len(line) > 160:
-                line = line[:160]
-
-            return line
-
-        except Exception:
-
-            return f"... ({name} cannot respond)"
+        return text.strip()

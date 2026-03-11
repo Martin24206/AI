@@ -1,4 +1,5 @@
 import json
+import time
 
 from engine.character_loader import CharacterLoader
 from engine.scene_manager import SceneManager
@@ -7,7 +8,12 @@ from engine.memory_engine import MemoryEngine
 from engine.dialogue_engine import DialogueEngine
 from engine.attention_engine import AttentionEngine
 from engine.conversation_flow_engine import ConversationFlowEngine
-
+from engine.knowledge_engine import KnowledgeEngine
+from engine.mood_engine import MoodEngine
+from engine.presence_engine import PresenceEngine
+from engine.relationship_engine import RelationshipEngine
+from engine.goal_engine import GoalEngine
+from engine.narrative_engine import NarrativeEngine
 
 # -----------------------------
 # Load Characters
@@ -25,14 +31,25 @@ with open("world_system/dynamic_event_engine.json") as f:
     event_rules = json.load(f)
 
 
+# -----------------------------
+# Initialize Systems
+# -----------------------------
+
 scene = SceneManager(characters)
 events = EventEngine(event_rules)
 memory = MemoryEngine()
+
 dialogue = DialogueEngine()
 attention = AttentionEngine(characters)
 flow = ConversationFlowEngine(characters)
 
+knowledge = KnowledgeEngine("world_system/canon_loader.json")
+mood = MoodEngine(characters)
+presence = PresenceEngine(characters)
+relationships = RelationshipEngine()
 
+goals = GoalEngine(characters)
+narrative = NarrativeEngine()
 # -----------------------------
 # Conversation Memory
 # -----------------------------
@@ -58,11 +75,26 @@ print("Scene started.\n")
 
 while True:
 
+    user_input = input("You (Rushia Vessel, enter to skip): ")
+
     # -------------------------
-    # User Input
+    # Admin Command
     # -------------------------
 
-    user_input = input("You (Rushia Vessel, enter to skip): ")
+    if user_input.startswith("/teach"):
+
+        fact = user_input.replace("/teach", "").strip()
+
+        knowledge.teach_world_fact(fact)
+
+        print(f"[WORLD FACT LEARNED: {fact}]")
+
+        continue
+
+
+    # -------------------------
+    # Player Dialogue
+    # -------------------------
 
     if user_input.strip() != "":
 
@@ -76,7 +108,6 @@ while True:
             user_input
         )
 
-        # Determine who noticed the player speaking
         reactors = attention.get_attentive_characters(
             event_type="player_dialogue",
             scene=scene.active_scene,
@@ -87,16 +118,40 @@ while True:
 
             char = characters[char_id]
 
-            # Rushia Vessel must never auto-speak
             if char["identity"]["id"] == "admin_external_operator":
                 continue
+
+            mood.update_mood(char_id)
+            current_mood = mood.get_mood(char_id)
+
+            actions = presence.generate_presence({char_id: char})
+            action_text = actions[0][1] if actions else ""
+
+            relationship_context = ""
+
+            if conversation_history:
+
+                last_speaker = conversation_history[-1]["speaker"]
+
+                for cid, char_data in characters.items():
+
+                    if char_data["identity"]["name"] == last_speaker:
+
+                        relationship_context = relationships.influence_dialogue(
+                            char_id,
+                            cid
+                        )
 
             line = dialogue.generate_line(
                 char,
                 conversation_history,
                 scene.active_scene,
                 memory.recall_recent_dialogue(),
-                memory.recall_events()
+                memory.recall_recent_events(),
+                mood=current_mood,
+                action=action_text,
+                relationship=relationship_context,
+                world_knowledge=knowledge.get_known_world_facts()
             )
 
             print(f'{char["identity"]["name"]}: {line}')
@@ -124,42 +179,13 @@ while True:
 
         print(f"[EVENT TRIGGERED: {event}]")
 
-        memory.remember(event)
-
-        event_result = scene.trigger_event(event)
-
-        for reactor in event_result["reactors"]:
-
-            char = characters[reactor]
-
-            if char["identity"]["id"] == "admin_external_operator":
-                continue
-
-            line = dialogue.generate_line(
-                char,
-                conversation_history,
-                scene.active_scene,
-                memory.recall_recent_dialogue(),
-                memory.recall_events()
-            )
-
-            print(f'{char["identity"]["name"]}: {line}')
-
-            conversation_history.append({
-                "speaker": char["identity"]["name"],
-                "line": line
-            })
-
-            memory.remember_dialogue(
-                char["identity"]["name"],
-                line
-            )
+        memory.remember_event(event)
 
         continue
 
 
     # -------------------------
-    # Choose Speaker
+    # AI Conversation
     # -------------------------
 
     speaker_id = flow.choose_next_speaker(
@@ -172,16 +198,24 @@ while True:
 
     character = characters[speaker_id]
 
-    # Rushia Vessel must never auto speak
     if character["identity"]["id"] == "admin_external_operator":
         continue
+
+    mood.update_mood(speaker_id)
+    current_mood = mood.get_mood(speaker_id)
+
+    actions = presence.generate_presence({speaker_id: character})
+    action_text = actions[0][1] if actions else ""
 
     line = dialogue.generate_line(
         character,
         conversation_history,
         scene.active_scene,
         memory.recall_recent_dialogue(),
-        memory.recall_events()
+        memory.recall_recent_events(),
+        mood=current_mood,
+        action=action_text,
+        world_knowledge=knowledge.get_known_world_facts()
     )
 
     print(f'{character["identity"]["name"]}: {line}')
@@ -195,3 +229,5 @@ while True:
         character["identity"]["name"],
         line
     )
+
+    time.sleep(1)

@@ -1,28 +1,64 @@
+import json
 import random
 
 
 class EventEngine:
 
-    def __init__(self, rules):
-        self.rules = rules
+    def __init__(self, config):
 
-    def check_for_event(self):
+        # Accept either a file path OR a loaded dictionary
+        if isinstance(config, str):
+            with open(config, "r", encoding="utf-8") as f:
+                self.config = json.load(f)
 
-        chance = self.rules["global_event_chance"]
+        elif isinstance(config, dict):
+            self.config = config
 
-        if random.random() > chance:
+        else:
+            raise ValueError("EventEngine requires a file path or dict config")
+
+        self.events = self.config.get("events", [])
+
+
+    def choose_event(self):
+
+        weighted_events = []
+
+        for event in self.events:
+
+            base_prob = event.get("base_probability", 0.1)
+
+            weighted_events.append((event, base_prob))
+
+        total = sum(w for _, w in weighted_events)
+
+        if total == 0:
             return None
 
-        categories = self.rules["event_categories"]
+        r = random.uniform(0, total)
 
-        category = random.choice(list(categories.keys()))
+        upto = 0
 
-        event_type = random.choice(
-            categories[category]["possible_events"]
-        )
+        for event, weight in weighted_events:
+
+            if upto + weight >= r:
+                return event
+
+            upto += weight
+
+        return None
+
+
+    def generate_event(self):
+
+        event = self.choose_event()
+
+        if not event:
+            return None
+
+        description = event.get("description", "Something happens.")
 
         return {
-            "category": category,
-            "type": event_type,
-            "description": f"A {event_type.replace('_',' ')} occurs."
+            "type": event.get("type", "generic"),
+            "description": description
         }

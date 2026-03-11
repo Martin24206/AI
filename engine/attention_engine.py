@@ -6,61 +6,59 @@ class AttentionEngine:
     def __init__(self, characters):
         self.characters = characters
 
-    def get_attentive_characters(self, event_type, scene, characters=None):
 
-        if characters is None:
-            characters = self.characters
+    def attention_score(self, character):
+
+        score = 0.4
+
+        # -----------------
+        # Scene awareness
+        # -----------------
+
+        scene_awareness = character.get("scene_awareness", {})
+
+        if isinstance(scene_awareness, dict):
+
+            level = scene_awareness.get("perception_level", "medium")
+
+            mapping = {
+                "very high": 0.6,
+                "high": 0.5,
+                "medium": 0.35,
+                "low": 0.2
+            }
+
+            score += mapping.get(level.lower(), 0.3)
+
+        # -----------------
+        # Personality traits
+        # -----------------
+
+        personality = character.get("personality", {})
+        traits = personality.get("traits", [])
+
+        if "observant" in traits:
+            score += 0.3
+
+        if "carefree" in traits:
+            score -= 0.1
+
+        return max(0.1, min(score, 0.95))
+
+
+    def get_attentive_characters(self, event_type, scene, characters):
+
+        observers = []
 
         present = scene.get("characters_present", [])
-        last_line = scene.get("last_line", "").lower()
 
-        reactors = []
+        for cid in present:
 
-        for char_id in present:
+            char = characters[cid]
 
-            char = characters.get(char_id)
+            score = self.attention_score(char)
 
-            if not char:
-                continue
+            if random.random() < score:
+                observers.append(cid)
 
-            name = char["identity"]["name"]
-
-            # Skip Rushia Vessel (player)
-            if char["identity"]["id"] == "admin_external_operator":
-                continue
-
-            awareness = char.get("awareness", 0.5)
-
-            # -----------------------------
-            # Name mention detection
-            # -----------------------------
-
-            first_name = name.split()[0].lower()
-
-            if first_name in last_line:
-                reactors.append(char_id)
-                continue
-
-            # -----------------------------
-            # Normal attention probability
-            # -----------------------------
-
-            if event_type == "player_dialogue":
-
-                chance = 0.25 + awareness * 0.35
-
-            else:
-
-                chance = 0.20 + awareness * 0.30
-
-            if random.random() < chance:
-                reactors.append(char_id)
-
-        # -----------------------------
-        # Limit simultaneous speakers
-        # -----------------------------
-
-        if len(reactors) > 2:
-            reactors = random.sample(reactors, 2)
-
-        return reactors
+        return observers

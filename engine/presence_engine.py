@@ -1,46 +1,31 @@
 import random
 
+
 class PresenceEngine:
 
     def __init__(self, characters):
+
         self.characters = characters
 
-    def generate_presence(self, scene_characters):
+    def generate_presence(self, chars):
 
-        presence_actions = []
+        actions = []
 
-        for cid, char in scene_characters.items():
+        for cid, char in chars.items():
 
-            presence_style = char.get("presence_style", {})
-            behavior = char.get("behavior", {})
+            name = char["identity"]["name"]
 
-            baseline = presence_style.get("baseline", "neutral")
-            spatial = presence_style.get("spatial_behavior", "still")
+            body_actions = [
+                "leans slightly forward",
+                "crosses their arms",
+                "glances around thoughtfully",
+                "tilts their head",
+                "smiles faintly",
+                "looks slightly confused"
+            ]
 
-            action = None
+            action = random.choice(body_actions)
 
-            if baseline == "lively":
-                action = random.choice([
-                    "shifts position",
-                    "leans closer to the group",
-                    "looks between everyone curiously"
-                ])
+            actions.append((cid, f"{name} {action}."))
 
-            elif baseline == "quiet":
-                action = random.choice([
-                    "observes quietly",
-                    "remains still beside the group",
-                    "watches the situation silently"
-                ])
-
-            elif baseline == "calm":
-                action = random.choice([
-                    "stands steadily",
-                    "keeps watch over the group",
-                    "quietly studies the surroundings"
-                ])
-
-            if action:
-                presence_actions.append((cid, action))
-
-        return presence_actions
+        return actions
