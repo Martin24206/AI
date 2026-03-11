@@ -11,37 +11,56 @@ class AttentionEngine:
         if characters is None:
             characters = self.characters
 
+        present = scene.get("characters_present", [])
+        last_line = scene.get("last_line", "").lower()
+
         reactors = []
 
-        present_characters = scene.get("characters_present", [])
-
-        for char_id in present_characters:
+        for char_id in present:
 
             char = characters.get(char_id)
 
             if not char:
                 continue
 
-            # Skip Rushia Vessel (admin)
+            name = char["identity"]["name"]
+
+            # Skip Rushia Vessel (player)
             if char["identity"]["id"] == "admin_external_operator":
                 continue
 
             awareness = char.get("awareness", 0.5)
 
-            # Player dialogue attention
+            # -----------------------------
+            # Name mention detection
+            # -----------------------------
+
+            first_name = name.split()[0].lower()
+
+            if first_name in last_line:
+                reactors.append(char_id)
+                continue
+
+            # -----------------------------
+            # Normal attention probability
+            # -----------------------------
+
             if event_type == "player_dialogue":
 
-                chance = 0.6 + (awareness * 0.3)
+                chance = 0.25 + awareness * 0.35
 
-                if random.random() < chance:
-                    reactors.append(char_id)
+            else:
 
-            # Event attention
-            elif isinstance(event_type, str):
+                chance = 0.20 + awareness * 0.30
 
-                chance = 0.4 + (awareness * 0.4)
+            if random.random() < chance:
+                reactors.append(char_id)
 
-                if random.random() < chance:
-                    reactors.append(char_id)
+        # -----------------------------
+        # Limit simultaneous speakers
+        # -----------------------------
+
+        if len(reactors) > 2:
+            reactors = random.sample(reactors, 2)
 
         return reactors

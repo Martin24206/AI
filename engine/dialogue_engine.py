@@ -21,13 +21,14 @@ class DialogueEngine:
         location = scene.get("location", "unknown")
 
         # -------------------------
-        # Build conversation history
+        # Conversation History
         # -------------------------
 
         history_text = ""
         last_speaker = None
 
-        for entry in history[-10:]:  # last 10 lines
+        for entry in history[-10:]:
+
             speaker = entry["speaker"]
             line = entry["line"]
 
@@ -41,28 +42,37 @@ class DialogueEngine:
         memory_context = ""
 
         if recent_memories:
-            memory_context += "\nRecent memories:\n"
+
+            memory_context += "\nRelevant past conversations:\n"
+
             for mem in recent_memories[-5:]:
+
                 speaker = mem.get("speaker", "")
                 line = mem.get("line", "")
-                memory_context += f"{speaker} said earlier: {line}\n"
+
+                memory_context += f"{speaker} said: {line}\n"
 
         if event_memories:
-            memory_context += "\nPast events remembered:\n"
+
+            memory_context += "\nImportant past events:\n"
+
             for event in event_memories[-3:]:
+
                 content = event.get("content", "")
+
                 memory_context += f"- {content}\n"
 
         # -------------------------
-        # Special admin awareness
+        # Admin Awareness
         # -------------------------
 
         admin_context = ""
 
         if last_speaker == "Rushia Vessel":
+
             admin_context = """
-The last speaker was Rushia Vessel, an external observer/admin.
-Characters who notice them may respond or acknowledge them naturally.
+Rushia Vessel is an external observer/admin interacting with the world.
+You may respond to them naturally.
 """
 
         # -------------------------
@@ -70,7 +80,7 @@ Characters who notice them may respond or acknowledge them naturally.
         # -------------------------
 
         prompt = f"""
-You are roleplaying as {name} in a living character world simulation.
+You are {name} in a living character world simulation.
 
 Location: {location}
 
@@ -81,20 +91,19 @@ Personality:
 
 {memory_context}
 
-Recent conversation:
+The last speaker was: {last_speaker}
+
+Conversation so far:
 {history_text}
 
-Rules:
-- Speak naturally
-- One short sentence
-- Stay in character
-- Respond to the last speaker if appropriate
-- Do not narrate actions
-- Do not describe thoughts
-- Do not speak for other characters
-- Do not explain things like an AI
+If greetings already happened earlier, do not greet again.
 
-{name}:
+Speak naturally as {name}.
+Respond to the last speaker if appropriate.
+
+Write ONE short sentence of dialogue.
+
+{name} says:
 """
 
         try:
@@ -112,13 +121,39 @@ Rules:
 
             line = data.get("response", "").strip()
 
-            # prevent weird long output
             line = line.split("\n")[0]
 
-            if len(line) > 200:
-                line = line[:200]
+            # -------------------------
+            # Remove narration artifacts
+            # -------------------------
+
+            bad_phrases = [
+                "says,",
+                "said,",
+                "remarked,",
+                "replied,",
+                "nodding",
+                "smiling",
+                "looking"
+            ]
+
+            for phrase in bad_phrases:
+
+                if phrase in line.lower():
+
+                    parts = line.split('"')
+
+                    if len(parts) >= 2:
+                        line = parts[1]
+
+            line = line.strip()
+
+            # limit length
+            if len(line) > 160:
+                line = line[:160]
 
             return line
 
         except Exception:
+
             return f"... ({name} cannot respond)"
