@@ -7,7 +7,14 @@ class DialogueEngine:
         self.url = "http://localhost:11434/api/generate"
         self.model = "qwen2.5:7b"
 
-    def generate_line(self, character, history, scene):
+    def generate_line(
+        self,
+        character,
+        history,
+        scene,
+        recent_memories=None,
+        event_memories=None
+    ):
 
         name = character["identity"]["name"]
         personality = character.get("personality", "neutral")
@@ -26,6 +33,25 @@ class DialogueEngine:
 
             history_text += f"{speaker}: {line}\n"
             last_speaker = speaker
+
+        # -------------------------
+        # Memory Context
+        # -------------------------
+
+        memory_context = ""
+
+        if recent_memories:
+            memory_context += "\nRecent memories:\n"
+            for mem in recent_memories[-5:]:
+                speaker = mem.get("speaker", "")
+                line = mem.get("line", "")
+                memory_context += f"{speaker} said earlier: {line}\n"
+
+        if event_memories:
+            memory_context += "\nPast events remembered:\n"
+            for event in event_memories[-3:]:
+                content = event.get("content", "")
+                memory_context += f"- {content}\n"
 
         # -------------------------
         # Special admin awareness
@@ -52,6 +78,8 @@ Personality:
 {personality}
 
 {admin_context}
+
+{memory_context}
 
 Recent conversation:
 {history_text}

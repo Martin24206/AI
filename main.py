@@ -85,10 +85,12 @@ while True:
                 continue
 
             line = dialogue.generate_line(
-                char,
-                conversation_history,
-                scene.active_scene
-            )
+            char,
+            conversation_history,
+            scene.active_scene,
+            memory.recall_recent_dialogue(),
+            memory.recall_events()
+        )
 
             print(f'{char["identity"]["name"]}: {line}')
 
@@ -160,3 +162,7 @@ while True:
         "speaker": character["identity"]["name"],
         "line": line
     })
+    memory.remember_dialogue(
+    char["identity"]["name"],
+    line
+)
