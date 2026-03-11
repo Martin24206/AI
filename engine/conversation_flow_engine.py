@@ -1,47 +1,45 @@
 import random
 
+
 class ConversationFlowEngine:
 
     def __init__(self, characters):
         self.characters = characters
 
-    def choose_next_speaker(self, current_speaker, participants):
 
-        possible = [c for c in participants if c != current_speaker]
+    def choose_next_speaker(self, conversation_history, scene):
+        """
+        Decide which character should speak next.
+        Returns a character ID.
+        """
 
-        weighted = []
+        present_characters = scene.get("characters_present", [])
 
-        for cid in possible:
+        if not present_characters:
+            return None
 
-            char = self.characters[cid]
+        # If no history yet, choose randomly
+        if not conversation_history:
+            return random.choice(present_characters)
 
-            freq = char.get("behavior", {}).get("speech_frequency", "medium")
+        last_speaker = conversation_history[-1]["speaker"]
 
-            if freq == "high":
-                weight = 3
-            elif freq == "medium":
-                weight = 2
-            else:
-                weight = 1
+        # Remove the last speaker so they don't immediately speak again
+        possible_speakers = []
 
-            weighted.extend([cid] * weight)
+        for char_id in present_characters:
 
-        return random.choice(weighted)
+            char = self.characters[char_id]
 
-    def generate_conversation_order(self, participants, turns=5):
+            if char["identity"]["name"] == last_speaker:
+                continue
 
-        order = []
+            if char["identity"]["id"] == "admin_external_operator":
+                continue
 
-        current = random.choice(participants)
+            possible_speakers.append(char_id)
 
-        order.append(current)
+        if not possible_speakers:
+            return None
 
-        for _ in range(turns - 1):
-
-            next_speaker = self.choose_next_speaker(current, participants)
-
-            order.append(next_speaker)
-
-            current = next_speaker
-
-        return order
+        return random.choice(possible_speakers)
