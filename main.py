@@ -8,6 +8,7 @@ from engine.dialogue_engine import DialogueEngine
 from engine.attention_engine import AttentionEngine
 from engine.conversation_flow_engine import ConversationFlowEngine
 
+
 # -----------------------------
 # Load Characters
 # -----------------------------
@@ -30,6 +31,7 @@ memory = MemoryEngine()
 dialogue = DialogueEngine()
 attention = AttentionEngine(characters)
 flow = ConversationFlowEngine(characters)
+
 
 # -----------------------------
 # Conversation Memory
@@ -69,6 +71,11 @@ while True:
             "line": user_input
         })
 
+        memory.remember_dialogue(
+            "Rushia Vessel",
+            user_input
+        )
+
         # Determine who noticed the player speaking
         reactors = attention.get_attentive_characters(
             event_type="player_dialogue",
@@ -85,12 +92,12 @@ while True:
                 continue
 
             line = dialogue.generate_line(
-            char,
-            conversation_history,
-            scene.active_scene,
-            memory.recall_recent_dialogue(),
-            memory.recall_events()
-        )
+                char,
+                conversation_history,
+                scene.active_scene,
+                memory.recall_recent_dialogue(),
+                memory.recall_events()
+            )
 
             print(f'{char["identity"]["name"]}: {line}')
 
@@ -98,6 +105,11 @@ while True:
                 "speaker": char["identity"]["name"],
                 "line": line
             })
+
+            memory.remember_dialogue(
+                char["identity"]["name"],
+                line
+            )
 
         continue
 
@@ -120,10 +132,15 @@ while True:
 
             char = characters[reactor]
 
+            if char["identity"]["id"] == "admin_external_operator":
+                continue
+
             line = dialogue.generate_line(
                 char,
                 conversation_history,
-                scene.active_scene
+                scene.active_scene,
+                memory.recall_recent_dialogue(),
+                memory.recall_events()
             )
 
             print(f'{char["identity"]["name"]}: {line}')
@@ -133,6 +150,11 @@ while True:
                 "line": line
             })
 
+            memory.remember_dialogue(
+                char["identity"]["name"],
+                line
+            )
+
         continue
 
 
@@ -141,19 +163,25 @@ while True:
     # -------------------------
 
     speaker_id = flow.choose_next_speaker(
-    conversation_history,
-    scene.active_scene
-)
+        conversation_history,
+        scene.active_scene
+    )
 
     if not speaker_id:
         continue
 
     character = characters[speaker_id]
 
+    # Rushia Vessel must never auto speak
+    if character["identity"]["id"] == "admin_external_operator":
+        continue
+
     line = dialogue.generate_line(
         character,
         conversation_history,
-        scene.active_scene
+        scene.active_scene,
+        memory.recall_recent_dialogue(),
+        memory.recall_events()
     )
 
     print(f'{character["identity"]["name"]}: {line}')
@@ -162,7 +190,8 @@ while True:
         "speaker": character["identity"]["name"],
         "line": line
     })
+
     memory.remember_dialogue(
-    char["identity"]["name"],
-    line
-)
+        character["identity"]["name"],
+        line
+    )
